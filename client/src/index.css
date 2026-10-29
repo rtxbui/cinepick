@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
+  --color-ink: #07070b;
+  --color-panel: #12121a;
+  --color-gold: #f5c518;
+  --color-crimson: #e50914;
+  --color-mist: #c9c9d6;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #07070b;
+  color: #f4f4f8;
+  font-family: var(--font-sans);
+}
+
+.hide-scroll {
+  scrollbar-width: none;
+}
+.hide-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.glass {
+  background: rgba(18, 18, 26, 0.62);
+  backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hero-mask {
+  background:
+    linear-gradient(90deg, rgba(7, 7, 11, 0.94) 0%, rgba(7, 7, 11, 0.55) 42%, rgba(7, 7, 11, 0.12) 70%),
+    linear-gradient(0deg, #07070b 0%, transparent 42%);
+}
