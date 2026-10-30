@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { Plus, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { imgFallback, stars } from "../../utils/format";
+import { stars } from "../../utils/format";
 import { useAuth } from "../../context/AuthContext";
+import Poster from "../ui/Poster";
 
 export default function MovieCard({ movie, compact = false }) {
   const { toggle, user } = useAuth();
@@ -16,12 +17,11 @@ export default function MovieCard({ movie, compact = false }) {
     >
       <Link to={`/movie/${movie.id}`} className="block">
         <div className="relative aspect-[2/3] overflow-hidden">
-          <img
+          <Poster
             src={movie.poster}
             alt={movie.title}
-            onError={(e) => {
-              e.currentTarget.src = imgFallback;
-            }}
+            title={movie.title}
+            size="w342"
             className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent opacity-80" />
@@ -43,8 +43,9 @@ export default function MovieCard({ movie, compact = false }) {
       <button
         type="button"
         onClick={() => toggle("watchlist", movie.id)}
-        className={`absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-black/50 text-white ${saved ? "text-gold" : ""}`}
-        aria-label="Add to watchlist"
+        className={`absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-black/50 ${saved ? "text-gold" : "text-white"}`}
+        aria-label={saved ? "Remove from watchlist" : "Add to watchlist"}
+        aria-pressed={saved}
       >
         <Plus size={16} />
       </button>

@@ -22,7 +22,13 @@ export default function Compare() {
   const card = (movie) =>
     movie ? (
       <article className="glass rounded-3xl p-5">
-        <img src={movie.poster} alt="" className="mx-auto h-72 rounded-2xl object-cover" />
+        <Poster
+          src={movie.poster}
+          alt={movie.title}
+          title={movie.title}
+          size="w500"
+          className="mx-auto h-72 w-48 rounded-2xl object-cover"
+        />
         <h2 className="mt-4 font-display text-3xl">{movie.title}</h2>
         <p className="text-sm text-mist">
           {movie.year} · {movie.rating} IMDb · {movie.director}

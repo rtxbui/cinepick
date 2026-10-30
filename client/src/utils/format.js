@@ -14,3 +14,8 @@ export function runtimeLabel(mins) {
 export function stars(rating) {
   return Number(rating || 0).toFixed(1);
 }
+/** Direct trailer link, or a YouTube search when the catalog has no trailer id. */
+export function trailerUrl(movie) {
+  if (movie.trailer) return `https://www.youtube.com/watch?v=${movie.trailer}`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${movie.title} ${movie.year || ""} trailer`)}`;
+}

@@ -15,7 +15,8 @@ function publicUser(user) {
     likedMovies: user.likedMovies,
     watchHistory: user.watchHistory,
     watchlist: user.watchlist,
-    savedMovies: user.savedMovies,
+        savedMovies: user.savedMovies,
+    ratings: user.ratings || {},
   };
 }
 

@@ -27,7 +27,8 @@ export const api = {
   login: (payload) => client.post("/auth/login", payload),
   me: () => client.get("/users/me"),
   savePreferences: (preferences) => client.put("/users/preferences", { preferences }),
-  toggleList: (list, movieId) => client.post(`/users/${list}`, { movieId }),
+    toggleList: (list, movieId) => client.post(`/users/${list}`, { movieId }),
+  rate: (movieId, value) => client.post("/users/rate", { movieId, value }),
   movies: (params) =>
     tryApi(
       () => client.get("/movies", { params }),

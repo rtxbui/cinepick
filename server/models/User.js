@@ -18,9 +18,10 @@ const userSchema = new mongoose.Schema(
     watchHistory: { type: [String], default: [] },
     watchlist: { type: [String], default: [] },
     savedMovies: { type: [String], default: [] },
-    searchHistory: { type: [String], default: [] },
+        searchHistory: { type: [String], default: [] },
+    ratings: { type: Object, default: {} }, // { "<movieId>": 1-5 }
   },
-  { timestamps: true }
+  { timestamps: true, minimize: false }
 );
 
 module.exports = mongoose.model("User", userSchema);

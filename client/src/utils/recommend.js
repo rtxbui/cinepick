@@ -1,20 +1,55 @@
 /**
  * Content-based recommendation engine.
- * Scores movies from survey answers, liked titles, and similar metadata.
+ * Scores movies from survey answers, liked titles, ratings, and similar metadata.
  * Structured so a later ML ranker can replace `scoreMovie`.
+ * (server/services/recommend.js mirrors this file — keep the two in sync.)
  */
 export function overlap(a = [], b = []) {
   const set = new Set(a.map((x) => String(x).toLowerCase()));
   return b.filter((x) => set.has(String(x).toLowerCase())).length;
 }
 
-export function scoreMovie(movie, profile, seedMovie) {
+/** How alike two movies are: genres, moods, keywords, director, cast. */
+export function affinity(movie, other) {
+  let score = overlap(movie.genres, other.genres) * 2.8;
+  score += overlap(movie.moods, other.moods || []) * 2.2;
+  score += overlap(movie.keywords || [], other.keywords || []) * 3.5;
+  if (movie.director && movie.director === other.director) score += 3;
+  if (overlap(movie.cast, other.cast)) score += 1.4;
+  return score;
+}
+
+/** Ids the user already reacted to; they should not come back as "new" picks. */
+export function seenIds(profile) {
+  return new Set(
+    [...(profile?.likedMovies || []), ...(profile?.watchHistory || []), ...Object.keys(profile?.ratings || {})].map(String)
+  );
+}
+
+/**
+ * Movies the user's taste is built from, each with a weight from -1 (disliked) to +1 (loved).
+ * A like counts as +1. A star rating overrides it: 5 -> +1, 4 -> +0.5, 3 -> 0, 2 -> -0.5, 1 -> -1.
+ */
+export function tasteSeeds(catalog, profile) {
+  const weights = new Map();
+  (profile?.likedMovies || []).forEach((id) => weights.set(String(id), 1));
+  Object.entries(profile?.ratings || {}).forEach(([id, stars]) => weights.set(String(id), (Number(stars) - 3) / 2));
+  return [...weights]
+    .filter(([, weight]) => weight !== 0)
+    .map(([id, weight]) => ({ movie: catalog.find((m) => String(m.id) === id), weight }))
+    .filter((seed) => seed.movie);
+}
+
+export function scoreMovie(movie, profile, seedMovie, seeds = []) {
   const prefs = profile?.preferences || {};
   let score = 0;
 
   score += overlap(movie.genres, prefs.genres || []) * 3.2;
   score += overlap(movie.moods, prefs.moods || []) * 2.4;
   if (prefs.language && movie.language === prefs.language) score += 1.6;
+
+  // Favourite actors / directors picked in the onboarding survey
+  score += overlap([movie.director, ...(movie.cast || [])], prefs.people || []) * 2.6;
 
   const duration = prefs.duration || "any";
   if (duration === "short" && movie.runtime <= 110) score += 1.1;
@@ -24,26 +59,26 @@ export function scoreMovie(movie, profile, seedMovie) {
   const minRating = Number(prefs.minRating || 0);
   if (movie.rating >= minRating) score += 1.2 + (movie.rating - minRating) * 0.15;
 
-  const liked = new Set((profile?.likedMovies || []).map(String));
-  if (liked.has(String(movie.id))) score += 8;
+  // "More like this one" (movie details page)
+  if (seedMovie) score += affinity(movie, seedMovie);
 
-  if (seedMovie) {
-    score += overlap(movie.genres, seedMovie.genres) * 2.8;
-    score += overlap(movie.moods, seedMovie.moods || []) * 2.2;
-    score += overlap(movie.keywords || [], seedMovie.keywords || []) * 3.5;
-    if (movie.director === seedMovie.director) score += 3;
-    if (overlap(movie.cast, seedMovie.cast)) score += 1.4;
+  // Pulled towards what the user liked / rated high, pushed away from what they rated low
+  if (seeds.length) {
+    const pull = seeds.reduce((sum, seed) => sum + seed.weight * affinity(movie, seed.movie), 0);
+    score += (pull / Math.sqrt(seeds.length)) * 0.6;
   }
 
   score += (movie.popularity || 0) / 40;
   return score;
 }
 
-export function recommendForUser(catalog, profile, { limit = 12, excludeIds = [] } = {}) {
+export function recommendForUser(catalog, profile, { limit = 12, excludeIds = [], excludeSeen = true } = {}) {
   const exclude = new Set(excludeIds.map(String));
+  if (excludeSeen) seenIds(profile).forEach((id) => exclude.add(id));
+  const seeds = tasteSeeds(catalog, profile);
   return [...catalog]
     .filter((m) => !exclude.has(String(m.id)))
-    .map((movie) => ({ movie, score: scoreMovie(movie, profile) }))
+    .map((movie) => ({ movie, score: scoreMovie(movie, profile, undefined, seeds) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((x) => x.movie);
@@ -60,8 +95,19 @@ export function similarTo(catalog, seed, { limit = 8 } = {}) {
 }
 
 export function becauseYouLiked(catalog, profile) {
-  const likedId = profile?.likedMovies?.[0];
-  const seed = catalog.find((m) => String(m.id) === String(likedId)) || catalog.find((m) => m.title === "Interstellar");
+  // Highest-rated movie first (4+ stars), then the liked list
+  const ratings = profile?.ratings || {};
+  const topRated = Object.keys(ratings)
+    .filter((id) => ratings[id] >= 4)
+    .sort((a, b) => ratings[b] - ratings[a]);
+  const candidates = [...topRated, ...(profile?.likedMovies || [])].map(String);
+
+  let seed = null;
+  for (const id of candidates) {
+    seed = catalog.find((m) => String(m.id) === id);
+    if (seed) break;
+  }
+  seed = seed || catalog.find((m) => m.title === "Interstellar");
   return { seed, similar: similarTo(catalog, seed) };
 }
 
@@ -95,6 +141,8 @@ export function chatSuggest(catalog, message, profile) {
       genres: genreBoost ? [genreBoost] : profile?.preferences?.genres,
     },
     likedMovies: seed ? [seed.id] : profile?.likedMovies,
+    watchHistory: profile?.watchHistory,
+    ratings: profile?.ratings,
   };
 
   const picks = recommendForUser(catalog, fakeProfile, {

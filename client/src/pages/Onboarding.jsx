@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Poster from "../components/ui/Poster";
 import { CATALOG, GENRES, LANGUAGES, MOODS } from "../data/catalog";
 import { useAuth } from "../context/AuthContext";
 
@@ -136,7 +137,7 @@ export default function Onboarding() {
                 onClick={() => toggle("liked", m.id)}
                 className={`overflow-hidden rounded-xl border ${on ? "border-gold" : "border-transparent opacity-70"}`}
               >
-                <img src={m.poster} alt={m.title} className="aspect-[2/3] w-full object-cover" />
+          <Poster src={m.poster} alt={m.title} title={m.title} size="w342" className="aspect-[2/3] w-full object-cover" />
               </button>
             );
           })}

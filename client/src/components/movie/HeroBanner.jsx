@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { Play, Plus, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { trailerUrl } from "../../utils/format";
+import Poster from "../ui/Poster";
 
 export default function HeroBanner({ movie }) {
   const { toggle } = useAuth();
@@ -9,14 +11,14 @@ export default function HeroBanner({ movie }) {
 
   return (
     <section className="relative h-[78vh] min-h-[540px] overflow-hidden">
-      <motion.img
+      <motion.div
         initial={{ scale: 1.08 }}
         animate={{ scale: 1 }}
         transition={{ duration: 8 }}
-        src={movie.backdrop || movie.poster}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+        className="absolute inset-0"
+      >
+        <Poster src={movie.backdrop} fallbackSrc={movie.poster} size="w1280" eager className="h-full w-full object-cover" />
+      </motion.div>
       <div className="hero-mask absolute inset-0" />
       <div className="relative mx-auto flex h-full max-w-7xl items-end px-4 pb-16">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl space-y-4">
@@ -33,7 +35,7 @@ export default function HeroBanner({ movie }) {
           <p className="max-w-lg text-sm leading-relaxed text-white/75 md:text-base">{movie.overview}</p>
           <div className="flex flex-wrap gap-3 pt-2">
             <a
-              href={`https://www.youtube.com/watch?v=${movie.trailer}`}
+              href={trailerUrl(movie)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black"

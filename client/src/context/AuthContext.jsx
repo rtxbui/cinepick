@@ -11,7 +11,8 @@ const emptyProfile = {
   likedMovies: [157336, 27205],
   watchHistory: [],
   watchlist: [],
-  savedMovies: [],
+   savedMovies: [],
+  ratings: {},
 };
 
 function readLocal() {
@@ -61,7 +62,17 @@ export function AuthProvider({ children }) {
           else current.add(id);
           return { ...prev, [list]: [...current].map((x) => Number(x) || x) };
         });
-        api.toggleList(list, movieId).catch(() => {});
+                api.toggleList(list, movieId).catch(() => {});
+      },
+      // stars: 1-5, or 0 to remove the rating
+      rate: (movieId, stars) => {
+        setUser((prev) => {
+          const ratings = { ...(prev.ratings || {}) };
+          if (stars) ratings[movieId] = stars;
+          else delete ratings[movieId];
+          return { ...prev, ratings };
+        });
+        api.rate(movieId, stars).catch(() => {});
       },
       login: async (email, password) => {
         const { data } = await api.login({ email, password });
