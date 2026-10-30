@@ -33,7 +33,10 @@ async function start() {
   } catch (err) {
     console.log("MongoDB unavailable, continuing with movie APIs only:", err.message);
   }
+  if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => console.log(`CinePick API on http://localhost:${PORT}`));
+}
 }
 
 start();
+module.exports = app;
